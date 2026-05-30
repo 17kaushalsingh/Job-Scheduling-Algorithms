@@ -4,6 +4,7 @@
 #include "Scheduler.h"
 #include "FCFSScheduler.h"
 #include "SJFScheduler.h"
+#include "SRTFScheduler.h"
 #include "RoundRobinScheduler.h"
 #include "PriorityScheduler.h"
 #include "Job.h"
@@ -24,9 +25,8 @@ public:
 
 private:
     std::vector<Job> jobs;
-    std::unique_ptr<Scheduler> scheduler;
     std::string pluginPath;
-    int currentAlgorithm; // 0:FCFS, 1:SJF, 2:RR, 3:Priority
+    int currentAlgorithm; // 0:FCFS, 1:SJF, 2:SRTF, 3:RR, 4:Priority
     std::string theme;
     std::map<std::string, std::string> userSettings;
 
@@ -52,7 +52,7 @@ private:
 
     // Scheduler integration
     void switchAlgorithm(int algo);
-    void updateScheduler();
+    std::unique_ptr<class Simulator> createSimulator();
 
     // Visualization
     void displayGanttChart();

@@ -15,8 +15,12 @@ public:
     int waitingTime;
     int turnaroundTime;
 
+    Job();
     Job(int id, int arrival, int burst, int prio = 0);
     Job(const std::string& name, int arrival, int burst, int prio = 0);
+
+    std::string serialize() const;
+    void deserialize(const std::string& data);
 
     // Getters
     std::string getName() const { return name; }

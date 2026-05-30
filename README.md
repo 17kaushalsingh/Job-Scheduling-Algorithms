@@ -6,7 +6,8 @@ A comprehensive CPU job scheduling simulator implementing multiple scheduling al
 
 ### Scheduling Algorithms
 - **FCFS (First-Come-First-Served)** - Non-preemptive queue-based scheduling
-- **SJF (Shortest Job First)** - Preemptive scheduling based on remaining burst time
+- **SJF (Shortest Job First)** - Non-preemptive scheduling based on burst time
+- **SRTF (Shortest Remaining Time First)** - Preemptive SJF scheduling
 - **Round Robin** - Time-quantum based preemptive scheduling with configurable quantum
 - **Priority Scheduling** - Preemptive with aging mechanism to prevent starvation
 
@@ -26,36 +27,20 @@ A comprehensive CPU job scheduling simulator implementing multiple scheduling al
 
 ### Architecture
 - **Extensible Design** - Strategy pattern for easy algorithm additions
-- **Two Implementations**:
-  - Single-file (`JobScheduler.cpp`) - Self-contained, portable
-  - Modular (`src/` + `include/`) - Professional structure with separation of concerns
+- **Modular Structure** - Professional structure with separation of concerns (`src/` + `include/`)
 
 ---
 
 ## Quick Start
 
-### Single-File Implementation (Recommended)
-
-**Compile:**
+**Build using Make:**
 ```bash
-g++ -std=c++17 JobScheduler.cpp -o JobScheduler
+make
 ```
 
 **Run:**
 ```bash
 ./JobScheduler
-```
-
-### Modular Implementation
-
-**Compile:**
-```bash
-g++ -std=c++17 -I include src/*.cpp -o ModularScheduler
-```
-
-**Run:**
-```bash
-./ModularScheduler
 ```
 
 ---
@@ -85,7 +70,7 @@ Upon launching, you'll see:
 - List all current jobs with their properties
 
 **2. Select Scheduling Algorithm**
-- Choose from FCFS, SJF, Round Robin, or Priority
+- Choose from FCFS, SJF, SRTF, Round Robin, or Priority
 - Current algorithm is displayed
 
 **3. Run Scheduler & View Visualization**
@@ -132,8 +117,8 @@ The included `jobs.csv` provides sample data for testing.
 
 ```
 Job Scheduling Algorithms/
-├── JobScheduler.cpp          # Single-file implementation (recommended)
-├── JobScheduler              # Compiled executable
+├── Makefile                  # Build script
+├── JobScheduler              # Compiled executable (after make)
 ├── jobs.csv                  # Sample job data
 ├── CLAUDE.md                 # Documentation for Claude Code
 ├── README.md                 # This file
@@ -144,7 +129,8 @@ Job Scheduling Algorithms/
 │   ├── Simulator.cpp         # Scheduler execution engine
 │   ├── UIController.cpp      # Menu and user interface
 │   ├── FCFSScheduler.cpp     # FCFS algorithm
-│   ├── SJFScheduler.cpp      # SJF algorithm
+│   ├── SJFScheduler.cpp      # Non-preemptive SJF algorithm
+│   ├── SRTFScheduler.cpp     # Preemptive SRTF algorithm
 │   ├── RoundRobinScheduler.cpp  # Round Robin algorithm
 │   └── PriorityScheduler.cpp    # Priority algorithm
 │
@@ -156,6 +142,7 @@ Job Scheduling Algorithms/
     ├── SchedulerFactory.h    # Plugin system (advanced)
     ├── FCFSScheduler.h
     ├── SJFScheduler.h
+    ├── SRTFScheduler.h
     ├── RoundRobinScheduler.h
     └── PriorityScheduler.h
 ```
@@ -175,6 +162,7 @@ The project uses the Strategy design pattern to encapsulate scheduling algorithm
        │
        ├─── FCFSScheduler
        ├─── SJFScheduler
+       ├─── SRTFScheduler
        ├─── RoundRobinScheduler
        └─── PriorityScheduler
 ```
@@ -224,6 +212,7 @@ classDiagram
 
     Scheduler <|-- FCFSScheduler
     Scheduler <|-- SJFScheduler
+    Scheduler <|-- SRTFScheduler
     Scheduler <|-- RoundRobinScheduler
     Scheduler <|-- PriorityScheduler
 
@@ -268,7 +257,8 @@ flowchart TD
 | Algorithm | Type | Advantages | Disadvantages |
 |-----------|------|------------|---------------|
 | **FCFS** | Non-preemptive | Simple, fair order | Convoy effect |
-| **SJF** | Preemptive | Minimizes avg waiting time | Starvation possible |
+| **SJF** | Non-preemptive | Minimizes avg waiting time | Starvation possible |
+| **SRTF** | Preemptive | Optimal avg waiting time | High context switch overhead |
 | **Round Robin** | Preemptive | Fair CPU time sharing | Context switch overhead |
 | **Priority** | Preemptive | Important jobs first | Starvation (solved via aging) |
 
@@ -353,6 +343,4 @@ Perfect for:
 
 This simulator was designed as an educational tool for understanding CPU scheduling. Each algorithm implementation closely follows the theoretical definitions while providing practical visualization and metrics.
 
-The dual architecture (single-file vs. modular) serves different purposes:
-- **Single-file**: Quick deployment, self-contained learning
-- **Modular**: Professional structure, easier maintenance and extension
+The modular architecture ensures a professional structure, easier maintenance and extension.

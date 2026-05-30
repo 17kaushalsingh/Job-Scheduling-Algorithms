@@ -26,6 +26,14 @@ void FCFSScheduler::schedule(int currentTime) {
     // FCFS does not require sorting or preemption
 }
 
+bool FCFSScheduler::shouldPreempt(const Job& currentJob, int currentJobRunTime) {
+    return false; // FCFS is non-preemptive
+}
+
+std::string FCFSScheduler::getName() const {
+    return "First Come First Serve (FCFS)";
+}
+
 FCFSScheduler::~FCFSScheduler() {}
 
 void FCFSScheduler::setJobs(const std::vector<Job>& jobs) {

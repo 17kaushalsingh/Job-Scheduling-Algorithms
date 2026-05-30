@@ -5,8 +5,13 @@
 Simulator::Simulator(std::unique_ptr<Scheduler> sched, std::vector<Job> jobs)
     : currentTime(0), scheduler(std::move(sched)), allJobs(std::move(jobs)) {}
 
+#include <optional>
+
 void Simulator::run() {
-    while (!allJobs.empty() || scheduler->hasJobs()) {
+    std::optional<Job> currentJob;
+    int currentJobRunTime = 0;
+
+    while (!allJobs.empty() || scheduler->hasJobs() || currentJob.has_value()) {
         // Add jobs that have arrived to the scheduler
         for (auto it = allJobs.begin(); it != allJobs.end();) {
             if (it->arrivalTime <= currentTime) {
@@ -16,20 +21,36 @@ void Simulator::run() {
                 ++it;
             }
         }
+        
         scheduler->schedule(currentTime);
 
-        if (scheduler->hasJobs()) {
-            Job job = scheduler->getNextJob();
-            if (job.startTime == -1) job.startTime = currentTime;
-            ganttChart.push_back({job.jobId, currentTime});
-            job.remainingTime--;
+        // Preemption check
+        if (currentJob.has_value()) {
+            if (scheduler->shouldPreempt(currentJob.value(), currentJobRunTime)) {
+                scheduler->addJob(currentJob.value());
+                currentJob.reset();
+            }
+        }
+
+        // Get next job if idle
+        if (!currentJob.has_value() && scheduler->hasJobs()) {
+            currentJob = scheduler->getNextJob();
+            currentJobRunTime = 0;
+            if (currentJob->startTime == -1) currentJob->startTime = currentTime;
+        }
+
+        // Execute current job
+        if (currentJob.has_value()) {
+            ganttChart.push_back({currentJob->jobId, currentTime});
+            currentJob->remainingTime--;
+            currentJobRunTime++;
             currentTime++;
-            if (job.remainingTime == 0) {
-                job.completionTime = currentTime;
-                job.calculateMetrics();
-                finishedJobs.push_back(job);
-            } else {
-                scheduler->addJob(job);
+
+            if (currentJob->remainingTime == 0) {
+                currentJob->completionTime = currentTime;
+                currentJob->calculateMetrics();
+                finishedJobs.push_back(currentJob.value());
+                currentJob.reset();
             }
         } else {
             currentTime++;

@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Scheduler.h"
-#include <queue>
+#include <vector>
+#include <algorithm>
 
-class RoundRobinScheduler : public Scheduler {
+class SRTFScheduler : public Scheduler {
 public:
-    RoundRobinScheduler(int quantum = 2);
+    SRTFScheduler();
     void addJob(const Job& job) override;
     Job getNextJob() override;
     bool hasJobs() const override;
@@ -16,11 +17,10 @@ public:
     std::string getStatistics() const override;
     bool shouldPreempt(const Job& currentJob, int currentJobRunTime) override;
     std::string getName() const override;
-    ~RoundRobinScheduler() override;
+    ~SRTFScheduler() override;
 
 private:
-    std::queue<Job> rrQueue;
+    std::vector<Job> srtfQueue;
     std::vector<Job> scheduledJobs;
     std::vector<std::string> timelineLog;
-    int timeQuantum;
 };

@@ -28,11 +28,19 @@ bool SJFScheduler::hasJobs() const {
 }
 
 void SJFScheduler::schedule(int currentTime) {
-    // SJF: sort jobs by remainingTime, only those that have arrived
+    // SJF: sort jobs by remainingTime
     std::sort(sjfQueue.begin(), sjfQueue.end(),
         [](const Job& a, const Job& b) {
             return a.remainingTime < b.remainingTime;
         });
+}
+
+bool SJFScheduler::shouldPreempt(const Job& currentJob, int currentJobRunTime) {
+    return false; // Standard SJF is non-preemptive
+}
+
+std::string SJFScheduler::getName() const {
+    return "Shortest Job First (SJF - Non-Preemptive)";
 }
 
 SJFScheduler::~SJFScheduler() {}

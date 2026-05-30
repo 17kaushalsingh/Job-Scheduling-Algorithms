@@ -3,12 +3,14 @@
 
 void UIController::loadSchedulerPlugin(const std::string& path) {
     pluginPath = path;
-    scheduler = SchedulerFactory::loadPlugin(path);
+    // Plugin loading logic would go here
 }
 // UIController.cpp
 #include "../include/UIController.h"
+#include "../include/Simulator.h"
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <iomanip>
 #include <limits>
 
@@ -76,46 +78,63 @@ void UIController::showAlgorithmMenu() {
     clearScreen();
     std::cout << "=== Algorithm Selection ===\n";
     std::cout << "1. FCFS\n";
-    std::cout << "2. SJF\n";
-    std::cout << "3. Round Robin\n";
-    std::cout << "4. Priority\n";
-    std::cout << "5. Back\n";
-    int choice = getIntInput("Select an algorithm: ", 1, 5);
+    std::cout << "2. SJF (Non-preemptive)\n";
+    std::cout << "3. SRTF (Preemptive SJF)\n";
+    std::cout << "4. Round Robin\n";
+    std::cout << "5. Priority\n";
+    std::cout << "6. Back\n";
+    int choice = getIntInput("Select an algorithm: ", 1, 6);
     handleAlgorithmMenuInput(choice);
 }
 
 void UIController::handleAlgorithmMenuInput(int choice) {
-    if (choice >= 1 && choice <= 4) {
+    if (choice >= 1 && choice <= 5) {
         switchAlgorithm(choice - 1);
-        updateScheduler();
         std::cout << "Algorithm switched.\n";
         pause();
     }
 }
 
 void UIController::showVisualizationMenu() {
+    if (jobs.empty()) {
+        clearScreen();
+        std::cout << "No jobs loaded. Please add jobs or load from file.\n";
+        pause();
+        return;
+    }
     clearScreen();
     std::cout << "=== Visualization ===\n";
+    auto sim = createSimulator();
+    sim->run();
     std::cout << "1. Display Gantt Chart\n";
     std::cout << "2. Display Timeline Log\n";
     std::cout << "3. Back\n";
     int choice = getIntInput("Select an option: ", 1, 3);
-    handleVisualizationMenuInput(choice);
-}
-
-void UIController::handleVisualizationMenuInput(int choice) {
+    
     switch (choice) {
-        case 1: displayGanttChart(); pause(); break;
-        case 2: displayTimelineLog(); pause(); break;
+        case 1: sim->printGanttChart(); pause(); break;
+        case 2: std::cout << "Timeline log display not implemented on sim level.\n"; pause(); break;
         case 3: return;
         default: error("Invalid choice."); pause();
     }
 }
 
+void UIController::handleVisualizationMenuInput(int choice) {
+    // Deprecated
+}
+
 void UIController::showStatisticsMenu() {
+    if (jobs.empty()) {
+        clearScreen();
+        std::cout << "No jobs loaded. Please add jobs or load from file.\n";
+        pause();
+        return;
+    }
     clearScreen();
     std::cout << "=== Statistics ===\n";
-    displayStatistics();
+    auto sim = createSimulator();
+    sim->run();
+    sim->reportMetrics();
     pause();
 }
 
@@ -138,7 +157,6 @@ void UIController::createJob() {
     int burst = getIntInput("Burst Time: ", 1, 10000);
     int priority = getIntInput("Priority: ", 0, 100);
     jobs.push_back(Job(name, arrival, burst, priority));
-    updateScheduler();
     std::cout << "Job created.\n";
     pause();
 }
@@ -153,7 +171,6 @@ void UIController::editJob() {
     jobs[idx].setArrivalTime(getIntInput("New Arrival Time: ", 0, 10000));
     jobs[idx].setBurstTime(getIntInput("New Burst Time: ", 1, 10000));
     jobs[idx].setPriority(getIntInput("New Priority: ", 0, 100));
-    updateScheduler();
     std::cout << "Job updated.\n";
     pause();
 }
@@ -165,7 +182,6 @@ void UIController::deleteJob() {
         std::cout << i + 1 << ". " << jobs[i].getName() << "\n";
     int idx = getIntInput("Job number: ", 1, jobs.size()) - 1;
     jobs.erase(jobs.begin() + idx);
-    updateScheduler();
     std::cout << "Job deleted.\n";
     pause();
 }
@@ -184,7 +200,6 @@ void UIController::importJobsCSV() {
         if (ss >> name >> delim >> arrival >> delim >> burst >> delim >> priority)
             jobs.push_back(Job(name, arrival, burst, priority));
     }
-    updateScheduler();
     std::cout << "Jobs imported.\n";
     pause();
 }
@@ -201,37 +216,24 @@ void UIController::exportJobsCSV() {
 
 void UIController::switchAlgorithm(int algo) {
     currentAlgorithm = algo;
-    switch (algo) {
-        case 0: scheduler = std::make_unique<FCFSScheduler>(); break;
-        case 1: scheduler = std::make_unique<SJFScheduler>(); break;
-        case 2: scheduler = std::make_unique<RoundRobinScheduler>(); break;
-        case 3: scheduler = std::make_unique<PriorityScheduler>(); break;
-        default: scheduler = std::make_unique<FCFSScheduler>();
+}
+
+std::unique_ptr<Simulator> UIController::createSimulator() {
+    std::unique_ptr<Scheduler> sched;
+    switch (currentAlgorithm) {
+        case 0: sched = std::make_unique<FCFSScheduler>(); break;
+        case 1: sched = std::make_unique<SJFScheduler>(); break;
+        case 2: sched = std::make_unique<SRTFScheduler>(); break;
+        case 3: sched = std::make_unique<RoundRobinScheduler>(); break;
+        case 4: sched = std::make_unique<PriorityScheduler>(); break;
+        default: sched = std::make_unique<FCFSScheduler>();
     }
-    updateScheduler();
+    return std::make_unique<Simulator>(std::move(sched), jobs);
 }
 
-void UIController::updateScheduler() {
-    if (scheduler) scheduler->setJobs(jobs);
-}
-
-void UIController::displayGanttChart() {
-    if (!scheduler) { error("No scheduler selected."); return; }
-    auto chart = scheduler->getGanttChart();
-    std::cout << "Gantt Chart:\n" << chart << "\n";
-}
-
-void UIController::displayTimelineLog() {
-    if (!scheduler) { error("No scheduler selected."); return; }
-    auto log = scheduler->getTimelineLog();
-    std::cout << "Timeline Log:\n" << log << "\n";
-}
-
-void UIController::displayStatistics() {
-    if (!scheduler) { error("No scheduler selected."); return; }
-    auto stats = scheduler->getStatistics();
-    std::cout << stats << "\n";
-}
+void UIController::displayGanttChart() {}
+void UIController::displayTimelineLog() {}
+void UIController::displayStatistics() {}
 
 int UIController::getIntInput(const std::string& prompt, int min, int max) {
     int value;
@@ -272,9 +274,6 @@ void UIController::error(const std::string& msg) {
     std::cout << "Error: " << msg << "\n";
 }
 // Session persistence implementation
-#include <fstream>
-#include <sstream>
-
 void UIController::saveSession(const std::string& filename) {
     std::ofstream out(filename);
     out << "algorithm," << currentAlgorithm << "\n";

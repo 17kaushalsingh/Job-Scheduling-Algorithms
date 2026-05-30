@@ -14,6 +14,8 @@ public:
     std::string getGanttChart() const override;
     std::string getTimelineLog() const override;
     std::string getStatistics() const override;
+    bool shouldPreempt(const Job& currentJob, int currentJobRunTime) override;
+    std::string getName() const override;
     ~FCFSScheduler() override;
 
 private:

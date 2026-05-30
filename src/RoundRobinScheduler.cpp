@@ -25,7 +25,15 @@ bool RoundRobinScheduler::hasJobs() const {
 
 void RoundRobinScheduler::schedule(int currentTime) {
     // Round Robin: jobs are processed in timeQuantum slices
-    // Actual logic handled in Simulator
+    // Actual logic handled in Simulator via shouldPreempt
+}
+
+bool RoundRobinScheduler::shouldPreempt(const Job& currentJob, int currentJobRunTime) {
+    return currentJobRunTime >= timeQuantum && !rrQueue.empty();
+}
+
+std::string RoundRobinScheduler::getName() const {
+    return "Round Robin (RR)";
 }
 
 RoundRobinScheduler::~RoundRobinScheduler() {}

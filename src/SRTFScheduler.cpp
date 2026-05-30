@@ -1,76 +1,62 @@
-#include "../include/PriorityScheduler.h"
+#include "../include/SRTFScheduler.h"
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
 
-PriorityScheduler::PriorityScheduler(int agingThreshold, int agingIncrement)
-    : agingThreshold(agingThreshold), agingIncrement(agingIncrement) {}
+SRTFScheduler::SRTFScheduler() {}
 
-void PriorityScheduler::addJob(const Job& job) {
-    priorityQueue.push_back(job);
+void SRTFScheduler::addJob(const Job& job) {
+    srtfQueue.push_back(job);
 }
 
-Job PriorityScheduler::getNextJob() {
-    if (priorityQueue.empty()) {
+Job SRTFScheduler::getNextJob() {
+    if (srtfQueue.empty()) {
         return Job(-1, 0, 0, 0);
     }
-    // Find job with highest priority (lowest priority value)
-    auto it = std::min_element(priorityQueue.begin(), priorityQueue.end(),
+    // Find job with minimum remainingTime
+    auto it = std::min_element(srtfQueue.begin(), srtfQueue.end(),
         [](const Job& a, const Job& b) {
-            return a.priority < b.priority;
+            return a.remainingTime < b.remainingTime;
         });
     Job job = *it;
-    priorityQueue.erase(it);
+    srtfQueue.erase(it);
     return job;
 }
 
-bool PriorityScheduler::hasJobs() const {
-    return !priorityQueue.empty();
+bool SRTFScheduler::hasJobs() const {
+    return !srtfQueue.empty();
 }
 
-void PriorityScheduler::schedule(int currentTime) {
-    applyAging(currentTime);
-    // Sort by priority (lower number = higher priority)
-    std::sort(priorityQueue.begin(), priorityQueue.end(),
+void SRTFScheduler::schedule(int currentTime) {
+    // SRTF: sort jobs by remainingTime
+    std::sort(srtfQueue.begin(), srtfQueue.end(),
         [](const Job& a, const Job& b) {
-            return a.priority < b.priority;
+            return a.remainingTime < b.remainingTime;
         });
 }
 
-bool PriorityScheduler::shouldPreempt(const Job& currentJob, int currentJobRunTime) {
-    if (priorityQueue.empty()) return false;
-    auto min_it = std::min_element(priorityQueue.begin(), priorityQueue.end(),
-        [](const Job& a, const Job& b) {
-            return a.priority < b.priority;
-        });
-    return min_it->priority < currentJob.priority;
+bool SRTFScheduler::shouldPreempt(const Job& currentJob, int currentJobRunTime) {
+    if (srtfQueue.empty()) return false;
+    auto min_it = std::min_element(srtfQueue.begin(), srtfQueue.end(), [](const Job& a, const Job& b){ return a.remainingTime < b.remainingTime; });
+    return min_it->remainingTime < currentJob.remainingTime;
 }
 
-std::string PriorityScheduler::getName() const {
-    return "Priority Scheduling (Preemptive with Aging)";
+std::string SRTFScheduler::getName() const {
+    return "Shortest Remaining Time First (SRTF)";
 }
 
-void PriorityScheduler::applyAging(int currentTime) {
-    for (auto& job : priorityQueue) {
-        if (currentTime - job.arrivalTime > agingThreshold) {
-            job.priority -= agingIncrement; // Lower value = higher priority
-            if (job.priority < 0) job.priority = 0;
-        }
-    }
-}
+SRTFScheduler::~SRTFScheduler() {}
 
-PriorityScheduler::~PriorityScheduler() {}
-
-void PriorityScheduler::setJobs(const std::vector<Job>& jobs) {
-    priorityQueue = jobs;
-    std::sort(priorityQueue.begin(), priorityQueue.end(), [](const Job& a, const Job& b) {
-        return a.priority > b.priority;
+void SRTFScheduler::setJobs(const std::vector<Job>& jobs) {
+    srtfQueue = jobs;
+    std::sort(srtfQueue.begin(), srtfQueue.end(), [](const Job& a, const Job& b) {
+        return a.burstTime < b.burstTime;
     });
     scheduledJobs.clear();
     timelineLog.clear();
 }
 
-std::string PriorityScheduler::getGanttChart() const {
+std::string SRTFScheduler::getGanttChart() const {
     std::ostringstream oss;
     const std::string colors[] = { "\033[41m", "\033[42m", "\033[43m", "\033[44m", "\033[45m", "\033[46m", "\033[47m" };
     oss << "Gantt Chart:\n";
@@ -99,7 +85,7 @@ std::string PriorityScheduler::getGanttChart() const {
     return oss.str();
 }
 
-std::string PriorityScheduler::getTimelineLog() const {
+std::string SRTFScheduler::getTimelineLog() const {
     std::ostringstream oss;
     oss << "Timeline Log:\n";
     for (const auto& entry : timelineLog) {
@@ -109,7 +95,7 @@ std::string PriorityScheduler::getTimelineLog() const {
     return oss.str();
 }
 
-std::string PriorityScheduler::getStatistics() const {
+std::string SRTFScheduler::getStatistics() const {
     std::ostringstream oss;
     double totalWT = 0, totalTT = 0;
     int count = scheduledJobs.size();
@@ -132,7 +118,7 @@ std::string PriorityScheduler::getStatistics() const {
     int totalBurst = 0;
     for (const auto& job : scheduledJobs) totalBurst += job.burstTime;
     oss << totalBurst << "\n";
-    oss << "Algorithm: Priority\n";
+    oss << "Algorithm: SRTF\n";
     oss << "Compare with other algorithms in Statistics menu.\n";
     return oss.str();
 }

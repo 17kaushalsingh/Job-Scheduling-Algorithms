@@ -13,6 +13,8 @@ public:
     virtual std::string getGanttChart() const = 0;
     virtual std::string getTimelineLog() const = 0;
     virtual std::string getStatistics() const = 0;
+    virtual bool shouldPreempt(const Job& currentJob, int currentJobRunTime) = 0;
+    virtual std::string getName() const = 0;
     virtual ~Scheduler() {}
 
 protected:
